@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard</title>
+</head>
+<body>
+
+<h2>Welcome {{ email }}</h2>
+
+<h3>Make Call</h3>
+
+<input type="text" id="target" placeholder="Enter receiver email">
+<button onclick="startCall()">Call</button>
+
+<a href="/call">Open Call Screen</a>
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+const socket = io();
+
+function startCall() {
+    let target = document.getElementById("target").value;
+
+    socket.emit("call_user", {
+        from: "{{ email }}",
+        target: target
+    });
+
+    alert("Calling " + target);
+}
+
+socket.on("incoming_call", (data) => {
+    alert("Incoming call from " + data.from);
+});
+</script>
+
+</body>
+</html>

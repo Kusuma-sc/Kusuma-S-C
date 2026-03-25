@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Voice Call</title>
+</head>
+<body>
+
+<h2>Voice Call</h2>
+
+<button onclick="start()">Start Call</button>
+
+<audio id="remoteAudio" autoplay></audio>
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+<script>
+const socket = io();
+let localStream;
+let peer;
+
+async function start() {
+
+    // 🎤 GET MICROPHONE (IMPORTANT FIX)
+    localStream = await navigator.mediaDevices.getUserMedia({
+        audio: true
+    });
+
+    peer = new RTCPeerConnection();
+
+    // send audio
+    localStream.getTracks().forEach(track => {
+        peer.addTrack(track, localStream);
+    });
+
+    // receive audio
+    peer.ontrack = event => {
+        document.getElementById("remoteAudio").srcObject = event.streams[0];
+    };
+
+    peer.onicecandidate = event => {
+        if (event.candidate) {
+            socket.emit("ice_candidate", {
+                candidate: event.candidate,
+                to: prompt("Send to (email)")
+            });
+        }
+    };
+
+    const offer = await peer.createOffer();
+    await peer.setLocalDescription(offer);
+
+    socket.emit("webrtc_offer", {
+        offer: offer,
+        to: prompt("Send to (email)")
+    });
+}
+
+socket.on("webrtc_offer", async data => {
+    peer = new RTCPeerConnection();
+
+    localStream = await navigator.mediaDevices.getUserMedia({
+        audio: true
+    });
+
+    localStream.getTracks().forEach(track => {
+        peer.addTrack(track, localStream);
+    });
+
+    peer.ontrack = event => {
+        document.getElementById("remoteAudio").srcObject = event.streams[0];
+    };
+
+    await peer.setRemoteDescription(data.offer);
+
+    const answer = await peer.createAnswer();
+    await peer.setLocalDescription(answer);
+
+    socket.emit("webrtc_answer", {
+        answer: answer,
+        to: data.from
+    });
+});
+
+socket.on("webrtc_answer", async data => {
+    await peer.setRemoteDescription(data.answer);
+});
+
+socket.on("ice_candidate", async data => {
+    if (peer) {
+        await peer.addIceCandidate(data.candidate);
+    }
+});
+</script>
+
+</body>
+</html>
