@@ -1,4 +1,3 @@
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
 from flask import Flask, render_template, request, session, redirect
 from flask_socketio import SocketIO, emit
 
@@ -9,59 +8,60 @@ socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
 
 users = {}
 
-# ---------------- ROUTES ---------------- #
+# ---------- ROUTES ---------- #
 
 @app.route('/')
 def login():
     return render_template("login.html")
 
-@app.route('/dashboard', methods=['POST'])
-def dashboard():
+@app.route('/chat', methods=['POST'])
+def chat():
     email = request.form.get("email")
+
+    if not email:
+        return redirect("/")
+
     session['email'] = email
-    return render_template("dashboard.html", email=email)
+    return render_template("call.html", email=email)
 
-@app.route('/call')
-def call():
-    return render_template("call.html", email=session.get('email'))
-
-# ---------------- SOCKET ---------------- #
+# ---------- SOCKET ---------- #
 
 @socketio.on('connect')
 def connect():
     if 'email' in session:
         users[session['email']] = request.sid
-        print("User connected:", session['email'])
 
 @socketio.on('disconnect')
 def disconnect():
     if 'email' in session:
         users.pop(session['email'], None)
 
+# CALL USER
 @socketio.on('call_user')
 def call_user(data):
     target = data['target']
     if target in users:
         emit('incoming_call', {'from': data['from']}, to=users[target])
 
+# OFFER
 @socketio.on('webrtc_offer')
 def offer(data):
     if data['to'] in users:
         emit('webrtc_offer', data, to=users[data['to']])
 
+# ANSWER
 @socketio.on('webrtc_answer')
 def answer(data):
     if data['to'] in users:
         emit('webrtc_answer', data, to=users[data['to']])
 
+# ICE
 @socketio.on('ice_candidate')
 def ice(data):
     if data['to'] in users:
         emit('ice_candidate', data, to=users[data['to']])
 
-# ---------------- RUN ---------------- #
+# ---------- RUN ---------- #
 
 if __name__ == "__main__":
     socketio.run(app, host="0.0.0.0", port=10000)
-    if __name__ == "__main__":
-        socketio.run(app)
