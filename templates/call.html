@@ -10,6 +10,9 @@
 <button onclick="start()">Start Call</button>
 
 <audio id="remoteAudio" autoplay></audio>
+peerConnection.ontrack = (event) => {
+    document.getElementById("remoteAudio").srcObject = event.streams[0];
+};
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
@@ -89,6 +92,24 @@ socket.on("ice_candidate", async data => {
     if (peer) {
         await peer.addIceCandidate(data.candidate);
     }
+});
+    navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+.then(stream => {
+    localStream = stream;
+
+    // VERY IMPORTANT
+    stream.getTracks().forEach(track => {
+        peerConnection.addTrack(track, stream);
+    });
+});
+    navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+.then(stream => {
+    localStream = stream;
+
+    // VERY IMPORTANT
+    stream.getTracks().forEach(track => {
+        peerConnection.addTrack(track, stream);
+    });
 });
 </script>
 
