@@ -7,109 +7,115 @@
 
 <h2>Voice Call</h2>
 
-<button onclick="start()">Start Call</button>
+<p>Your Email: {{ email }}</p>
+
+<input type="text" id="target" placeholder="Enter email to call">
+<button onclick="callUser()">Call</button>
+
+<h3 id="status">Status: Idle</h3>
 
 <audio id="remoteAudio" autoplay></audio>
-peerConnection.ontrack = (event) => {
-    document.getElementById("remoteAudio").srcObject = event.streams[0];
-};
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
 <script>
 const socket = io();
+
 let localStream;
 let peer;
 
-async function start() {
+const config = {
+    iceServers: [
+        { urls: "stun:stun.l.google.com:19302" }
+    ]
+};
 
-    // 🎤 GET MICROPHONE (IMPORTANT FIX)
-    localStream = await navigator.mediaDevices.getUserMedia({
-        audio: true
+// 🎤 GET MIC
+async function init() {
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+}
+init();
+
+// 📞 CALL BUTTON
+function callUser() {
+    const target = document.getElementById("target").value;
+
+    socket.emit("call_user", {
+        from: "{{ email }}",
+        target: target
     });
 
-    peer = new RTCPeerConnection();
+    createPeer(target);
+}
 
-    // send audio
+// CREATE PEER
+function createPeer(target) {
+    peer = new RTCPeerConnection(config);
+
     localStream.getTracks().forEach(track => {
         peer.addTrack(track, localStream);
     });
 
-    // receive audio
-    peer.ontrack = event => {
-        document.getElementById("remoteAudio").srcObject = event.streams[0];
+    peer.ontrack = e => {
+        document.getElementById("remoteAudio").srcObject = e.streams[0];
     };
 
-    peer.onicecandidate = event => {
-        if (event.candidate) {
+    peer.onicecandidate = e => {
+        if (e.candidate) {
             socket.emit("ice_candidate", {
-                candidate: event.candidate,
-                to: prompt("Send to (email)")
+                to: target,
+                candidate: e.candidate
             });
         }
     };
 
-    const offer = await peer.createOffer();
-    await peer.setLocalDescription(offer);
+    peer.createOffer().then(offer => {
+        peer.setLocalDescription(offer);
 
-    socket.emit("webrtc_offer", {
-        offer: offer,
-        to: prompt("Send to (email)")
+        socket.emit("webrtc_offer", {
+            to: target,
+            from: "{{ email }}",
+            offer: offer
+        });
     });
 }
 
-socket.on("webrtc_offer", async data => {
-    peer = new RTCPeerConnection();
+// 📞 INCOMING CALL
+socket.on("incoming_call", (data) => {
+    const accept = confirm(" Call from " + data.from);
+    if (!accept) return;
 
-    localStream = await navigator.mediaDevices.getUserMedia({
-        audio: true
-    });
+    createPeer(data.from);
+});
 
-    localStream.getTracks().forEach(track => {
-        peer.addTrack(track, localStream);
-    });
+// RECEIVE OFFER
+socket.on("webrtc_offer", async (data) => {
+    createPeer(data.from);
 
-    peer.ontrack = event => {
-        document.getElementById("remoteAudio").srcObject = event.streams[0];
-    };
-
-    await peer.setRemoteDescription(data.offer);
+    await peer.setRemoteDescription(new RTCSessionDescription(data.offer));
 
     const answer = await peer.createAnswer();
     await peer.setLocalDescription(answer);
 
     socket.emit("webrtc_answer", {
-        answer: answer,
-        to: data.from
+        to: data.from,
+        answer: answer
     });
+
+    document.getElementById("status").innerText = "Connected";
 });
 
-socket.on("webrtc_answer", async data => {
-    await peer.setRemoteDescription(data.answer);
+// RECEIVE ANSWER
+socket.on("webrtc_answer", async (data) => {
+    await peer.setRemoteDescription(new RTCSessionDescription(data.answer));
+    document.getElementById("status").innerText = "Connected";
 });
 
-socket.on("ice_candidate", async data => {
+// ICE
+socket.on("ice_candidate", async (data) => {
     if (peer) {
-        await peer.addIceCandidate(data.candidate);
+        await peer.addIceCandidate(new RTCIceCandidate(data.candidate));
     }
-});
-    navigator.mediaDevices.getUserMedia({ audio: true, video: false })
-.then(stream => {
-    localStream = stream;
-
-    // VERY IMPORTANT
-    stream.getTracks().forEach(track => {
-        peerConnection.addTrack(track, stream);
-    });
-});
-    navigator.mediaDevices.getUserMedia({ audio: true, video: false })
-.then(stream => {
-    localStream = stream;
-
-    // VERY IMPORTANT
-    stream.getTracks().forEach(track => {
-        peerConnection.addTrack(track, stream);
-    });
 });
 </script>
 

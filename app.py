@@ -43,6 +43,15 @@ def call_user(data):
     if target in users:
         emit('incoming_call', {'from': data['from']}, to=users[target])
 
+@app.route('/dashboard', methods=['POST'])
+def dashboard():
+    email = request.form.get("email")
+
+    if not email:
+        return redirect("/")
+
+    session['email'] = email
+    return render_template("call.html", email=email)
 # OFFER
 @socketio.on('webrtc_offer')
 def offer(data):
