@@ -59,6 +59,16 @@ def answer(data):
 def ice(data):
     if data['to'] in users:
         emit('ice_candidate', data, to=users[data['to']])
+@app.route('/dashboard', methods=['POST'])
+def dashboard():
+    email = request.form.get("email")
+    password = request.form.get("password")
+
+    if not email or not password:
+        return redirect("/")
+
+    session['email'] = email
+    return render_template("chat.html", email=email)
 
 # -------- RUN -------- #
 
