@@ -2,17 +2,20 @@
 <html>
 <head>
     <title>Call</title>
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 
-<h2>Calling Page</h2>
+<div class="card">
+    <h2>📞 Voice Call</h2>
 
-<h3 id="status">Waiting...</h3>
+    <h3 id="status">Waiting...</h3>
 
-<button id="acceptBtn" style="display:none;">Accept</button>
-<button id="rejectBtn" style="display:none;">Reject</button>
+    <button id="acceptBtn" class="accept" style="display:none;">✅ Accept</button>
+    <button id="rejectBtn" class="reject" style="display:none;">❌ Reject</button>
 
-<audio id="remoteAudio" autoplay></audio>
+    <audio id="remoteAudio" autoplay></audio>
+</div>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
@@ -27,48 +30,23 @@ navigator.mediaDevices.getUserMedia({ audio: true })
     localStream = stream;
 });
 
-// CREATE PEER
-function createPeer(target) {
-    peer = new RTCPeerConnection({
-        iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
-    });
-
-    localStream.getTracks().forEach(track => {
-        peer.addTrack(track, localStream);
-    });
-
-    peer.ontrack = e => {
-        document.getElementById("remoteAudio").srcObject = e.streams[0];
-    };
-
-    peer.onicecandidate = e => {
-        if (e.candidate) {
-            socket.emit("ice_candidate", {
-                to: target,
-                candidate: e.candidate
-            });
-        }
-    };
-}
-
-// INCOMING CALL
+// Incoming call UI
 socket.on("incoming_call", (data) => {
     caller = data.from;
 
-    document.getElementById("status").innerText = "Incoming call...";
-    document.getElementById("acceptBtn").style.display = "inline";
-    document.getElementById("rejectBtn").style.display = "inline";
+    document.getElementById("status").innerText = "Incoming call from " + caller;
+    document.getElementById("acceptBtn").style.display = "block";
+    document.getElementById("rejectBtn").style.display = "block";
 });
 
-// ACCEPT
-document.getElementById("acceptBtn").onclick = async () => {
-    createPeer(caller);
-    document.getElementById("status").innerText = "Connected";
+// Accept
+document.getElementById("acceptBtn").onclick = () => {
+    document.getElementById("status").innerText = "Call Connected";
 };
 
-// REJECT
+// Reject
 document.getElementById("rejectBtn").onclick = () => {
-    location.href = "/chat";
+    window.location.href = "/chat";
 };
 </script>
 

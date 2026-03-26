@@ -1,27 +1,21 @@
-body.bg {
-    background: linear-gradient(to right, #4facfe, #00f2fe);
-    font-family: Arial;
-}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
 
-.login-box {
-    width: 300px;
-    margin: 150px auto;
-    background: white;
-    padding: 30px;
-    border-radius: 10px;
-    text-align: center;
-}
+<div class="card">
+    <h2>🎧 Voice Call App</h2>
+    <p>Login to continue</p>
 
-input {
-    width: 100%;
-    margin: 10px 0;
-    padding: 10px;
-}
+    <form action="/chat" method="POST">
+        <input type="email" name="email" placeholder="Enter Email" required>
+        <input type="password" name="password" placeholder="Enter Password" required>
+        <button type="submit">Login</button>
+    </form>
+</div>
 
-button {
-    padding: 10px;
-    background: blue;
-    color: white;
-    border: none;
-    cursor: pointer;
-}
+</body>
+</html>

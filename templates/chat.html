@@ -6,10 +6,12 @@
 </head>
 <body>
 
-<h2>Welcome {{ email }}</h2>
+<div class="card">
+    <h2>Welcome {{ email }}</h2>
+    <h3>🟢 Online Users</h3>
 
-<h3>Online Users</h3>
-<ul id="users"></ul>
+    <ul id="users"></ul>
+</div>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
@@ -26,7 +28,7 @@ socket.on("user_list", (users) => {
 
             li.innerHTML = `
                 ${user}
-                <button onclick="callUser('${user}')">Call</button>
+                <button class="call-btn" onclick="callUser('${user}')">📞 Call</button>
             `;
 
             ul.appendChild(li);
