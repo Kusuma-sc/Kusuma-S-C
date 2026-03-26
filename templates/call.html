@@ -1,18 +1,16 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Voice Call</title>
+    <title>Call</title>
 </head>
 <body>
 
-<h2>Voice Call</h2>
+<h2>Calling Page</h2>
 
-<p>Your Email: {{ email }}</p>
+<h3 id="status">Waiting...</h3>
 
-<input type="text" id="target" placeholder="Enter email to call">
-<button onclick="callUser()">Call</button>
-
-<h3 id="status">Status: Idle</h3>
+<button id="acceptBtn" style="display:none;">Accept</button>
+<button id="rejectBtn" style="display:none;">Reject</button>
 
 <audio id="remoteAudio" autoplay></audio>
 
@@ -20,37 +18,20 @@
 
 <script>
 const socket = io();
-
-let localStream;
 let peer;
+let localStream;
+let caller = null;
 
-const config = {
-    iceServers: [
-        { urls: "stun:stun.l.google.com:19302" }
-    ]
-};
-
-// 🎤 GET MIC
-async function init() {
-    localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-}
-init();
-
-// 📞 CALL BUTTON
-function callUser() {
-    const target = document.getElementById("target").value;
-
-    socket.emit("call_user", {
-        from: "{{ email }}",
-        target: target
-    });
-
-    createPeer(target);
-}
+navigator.mediaDevices.getUserMedia({ audio: true })
+.then(stream => {
+    localStream = stream;
+});
 
 // CREATE PEER
 function createPeer(target) {
-    peer = new RTCPeerConnection(config);
+    peer = new RTCPeerConnection({
+        iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+    });
 
     localStream.getTracks().forEach(track => {
         peer.addTrack(track, localStream);
@@ -68,55 +49,27 @@ function createPeer(target) {
             });
         }
     };
-
-    peer.createOffer().then(offer => {
-        peer.setLocalDescription(offer);
-
-        socket.emit("webrtc_offer", {
-            to: target,
-            from: "{{ email }}",
-            offer: offer
-        });
-    });
 }
 
-// 📞 INCOMING CALL
+// INCOMING CALL
 socket.on("incoming_call", (data) => {
-    const accept = confirm(" Call from " + data.from);
-    if (!accept) return;
+    caller = data.from;
 
-    createPeer(data.from);
+    document.getElementById("status").innerText = "Incoming call...";
+    document.getElementById("acceptBtn").style.display = "inline";
+    document.getElementById("rejectBtn").style.display = "inline";
 });
 
-// RECEIVE OFFER
-socket.on("webrtc_offer", async (data) => {
-    createPeer(data.from);
-
-    await peer.setRemoteDescription(new RTCSessionDescription(data.offer));
-
-    const answer = await peer.createAnswer();
-    await peer.setLocalDescription(answer);
-
-    socket.emit("webrtc_answer", {
-        to: data.from,
-        answer: answer
-    });
-
+// ACCEPT
+document.getElementById("acceptBtn").onclick = async () => {
+    createPeer(caller);
     document.getElementById("status").innerText = "Connected";
-});
+};
 
-// RECEIVE ANSWER
-socket.on("webrtc_answer", async (data) => {
-    await peer.setRemoteDescription(new RTCSessionDescription(data.answer));
-    document.getElementById("status").innerText = "Connected";
-});
-
-// ICE
-socket.on("ice_candidate", async (data) => {
-    if (peer) {
-        await peer.addIceCandidate(new RTCIceCandidate(data.candidate));
-    }
-});
+// REJECT
+document.getElementById("rejectBtn").onclick = () => {
+    location.href = "/chat";
+};
 </script>
 
 </body>

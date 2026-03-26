@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<h2>Welcome {{ email }}</h2>
+
+<h3>Online Users</h3>
+<ul id="users"></ul>
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+<script>
+const socket = io();
+
+socket.on("user_list", (users) => {
+    const ul = document.getElementById("users");
+    ul.innerHTML = "";
+
+    users.forEach(user => {
+        if (user !== "{{ email }}") {
+            const li = document.createElement("li");
+
+            li.innerHTML = `
+                ${user}
+                <button onclick="callUser('${user}')">Call</button>
+            `;
+
+            ul.appendChild(li);
+        }
+    });
+});
+
+function callUser(target) {
+    window.location.href = "/call?target=" + target;
+}
+</script>
+
+</body>
+</html>

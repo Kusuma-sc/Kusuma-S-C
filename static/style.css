@@ -1,0 +1,27 @@
+body.bg {
+    background: linear-gradient(to right, #4facfe, #00f2fe);
+    font-family: Arial;
+}
+
+.login-box {
+    width: 300px;
+    margin: 150px auto;
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    text-align: center;
+}
+
+input {
+    width: 100%;
+    margin: 10px 0;
+    padding: 10px;
+}
+
+button {
+    padding: 10px;
+    background: blue;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
