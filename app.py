@@ -69,6 +69,13 @@ def dashboard():
 
     session['email'] = email
     return render_template("chat.html", email=email)
+@app.route('/call')
+def call():
+    if 'email' not in session:
+        return redirect("/")
+
+    target = request.args.get("target")
+    return render_template("call.html", email=session['email'], target=target)
 
 # -------- RUN -------- #
 
