@@ -1,94 +1,51 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Chat</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <title>Login</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial;
+            background: linear-gradient(to right, #667eea, #764ba2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .box {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            width: 300px;
+        }
+
+        input {
+            width: 90%;
+            padding: 10px;
+            margin: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
 
-<div class="card">
-    <h2>Welcome {{ email }}</h2>
+<div class="box">
+    <h2>Login</h2>
 
-    <h3>🟢 Online Users</h3>
-    <ul id="users"></ul>
-
-    <hr>
-
-    <h3>💬 Chat</h3>
-    <input id="msg" placeholder="Type message">
-    <button onclick="sendMessage()">Send</button>
-
-    <ul id="chatBox"></ul>
+    <form action="/chat" method="POST">
+        <input type="email" name="email" placeholder="Enter Email" required>
+        <button type="submit">Login</button>
+    </form>
 </div>
-
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-
-<script>
-const socket = io();
-let selectedUser = null;
-
-// USER LIST
-socket.on("user_list", (users) => {
-    const ul = document.getElementById("users");
-    ul.innerHTML = "";
-
-    users.forEach(user => {
-        if (user !== "{{ email }}") {
-
-            const li = document.createElement("li");
-
-            li.innerHTML = `
-                ${user}
-                <button onclick="selectUser('${user}')">Chat</button>
-                <button onclick="callUser('${user}')">📞 Call</button>
-            `;
-
-            ul.appendChild(li);
-        }
-    });
-});
-
-// SELECT USER
-function selectUser(user) {
-    selectedUser = user;
-    alert("Chatting with " + user);
-}
-
-// SEND MESSAGE
-function sendMessage() {
-    const msg = document.getElementById("msg").value;
-
-    if (!selectedUser) {
-        alert("Select a user first");
-        return;
-    }
-
-    socket.emit("send_message", {
-        to: selectedUser,
-        from: "{{ email }}",
-        message: msg
-    });
-
-    addMessage("Me: " + msg);
-}
-
-// RECEIVE MESSAGE
-socket.on("receive_message", (data) => {
-    addMessage(data.from + ": " + data.message);
-});
-
-// ADD MESSAGE UI
-function addMessage(text) {
-    const li = document.createElement("li");
-    li.innerText = text;
-    document.getElementById("chatBox").appendChild(li);
-}
-
-// CALL USER
-function callUser(user) {
-    window.location.href = "/call?target=" + user;
-}
-</script>
 
 </body>
 </html>

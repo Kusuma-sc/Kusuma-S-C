@@ -1,53 +1,114 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Call</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <title>Chat Dashboard</title>
+    <style>
+        body {
+            font-family: Arial;
+            margin: 0;
+            background: #f4f6f9;
+        }
+
+        .header {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+        }
+
+        .container {
+            display: flex;
+            height: 90vh;
+        }
+
+        .sidebar {
+            width: 30%;
+            background: #fff;
+            border-right: 1px solid #ccc;
+            padding: 10px;
+        }
+
+        .chat {
+            width: 70%;
+            padding: 20px;
+        }
+
+        .user {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+
+        .user:hover {
+            background: #eee;
+        }
+
+        input {
+            width: 80%;
+            padding: 10px;
+        }
+
+        button {
+            padding: 10px;
+            margin: 5px;
+        }
+    </style>
 </head>
 <body>
 
-<div class="card">
-    <h2>📞 Voice Call</h2>
+<div class="header">
+    Logged in as: {{ email }}
+</div>
 
-    <h3 id="status">Waiting...</h3>
+<div class="container">
 
-    <button id="acceptBtn" class="accept" style="display:none;">✅ Accept</button>
-    <button id="rejectBtn" class="reject" style="display:none;">❌ Reject</button>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <h3>Call User</h3>
+        <input type="text" id="target" placeholder="Enter email">
+        <button onclick="callUser()">Call</button>
+    </div>
 
-    <audio id="remoteAudio" autoplay></audio>
+    <!-- Chat -->
+    <div class="chat">
+        <h3>Chat</h3>
+        <div id="messages"></div>
+
+        <input type="text" id="msg">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
 </div>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
 <script>
 const socket = io();
-let peer;
-let localStream;
-let caller = null;
 
-navigator.mediaDevices.getUserMedia({ audio: true })
-.then(stream => {
-    localStream = stream;
+function sendMessage() {
+    const msg = document.getElementById("msg").value;
+
+    socket.emit("message", {
+        msg: msg,
+        user: "{{ email }}"
+    });
+}
+
+socket.on("message", (data) => {
+    document.getElementById("messages").innerHTML +=
+        "<p><b>" + data.user + ":</b> " + data.msg + "</p>";
 });
 
-// Incoming call UI
-socket.on("incoming_call", (data) => {
-    caller = data.from;
+// Call user
+function callUser() {
+    const target = document.getElementById("target").value;
 
-    document.getElementById("status").innerText = "Incoming call from " + caller;
-    document.getElementById("acceptBtn").style.display = "block";
-    document.getElementById("rejectBtn").style.display = "block";
-});
+    socket.emit("call_user", {
+        from: "{{ email }}",
+        target: target
+    });
 
-// Accept
-document.getElementById("acceptBtn").onclick = () => {
-    document.getElementById("status").innerText = "Call Connected";
-};
-
-// Reject
-document.getElementById("rejectBtn").onclick = () => {
-    window.location.href = "/chat";
-};
+    window.location.href = "/call";
+}
 </script>
 
 </body>

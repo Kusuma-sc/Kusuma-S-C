@@ -5,6 +5,7 @@ app = Flask(__name__)
 app.secret_key = "secret123"
 
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
+socketio.emit('user_list', list(users.keys()))
 
 users = {}
 
@@ -76,6 +77,31 @@ def call():
 
     target = request.args.get("target")
     return render_template("call.html", email=session['email'], target=target)
+@socketio.on('call_user')
+def call_user(data):
+    target = data.get('target')
+    caller = data.get('from')
+
+    if target in users:
+        emit('incoming_call', {'from': caller}, to=users[target])
+
+
+# ✅ ACCEPT CALL
+@socketio.on('accept_call')
+def accept_call(data):
+    target = data.get('to')
+
+    if target in users:
+        emit('call_accepted', data, to=users[target])
+
+
+# ❌ REJECT CALL
+@socketio.on('reject_call')
+def reject_call(data):
+    target = data.get('to')
+
+    if target in users:
+        emit('call_rejected', data, to=users[target])
 
 # -------- RUN -------- #
 
