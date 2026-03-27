@@ -101,6 +101,25 @@ function callUser(){
     window.location.href = "/call?target=" + target;
 }
 </script>
+<script>
+const socket = io();
+
+// 📞 INCOMING CALL POPUP (FIX)
+socket.on("incoming_call", (data) => {
+
+    const accept = confirm("📞 Incoming call from " + data.from);
+
+    if (accept) {
+        // 👉 go to call page
+        window.location.href = "/call?target=" + data.from;
+    } else {
+        // 👉 reject call
+        socket.emit("reject_call", {
+            to: data.from
+        });
+    }
+});
+</script>
 
 </body>
 </html>

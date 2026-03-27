@@ -86,7 +86,12 @@ function createPeer(){
 }
 
 // CALL USER
-socket.emit("call_user",{to:target,from:myEmail});
+function startCall(){
+    socket.emit("call_user", {
+        to: target,
+        from: myEmail
+    });
+}
 
 // OFFER
 socket.on("webrtc_offer", async data=>{
