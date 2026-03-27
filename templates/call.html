@@ -2,194 +2,64 @@
 <html>
 <head>
 <title>Call</title>
+<link rel="stylesheet" href="/static/style.css">
 </head>
-
 <body>
 
-<h2>Voice Call</h2>
-<p id="status">Idle</p>
+<div class="card">
+<h2>Calling {{ target }}</h2>
 
-<button onclick="acceptCall()">Accept</button>
-<button onclick="rejectCall()">Reject</button>
+<button onclick="accept()">Accept</button>
+<button onclick="reject()">Reject</button>
 
-<audio id="remoteAudio" autoplay></audio>
+<p id="status">Waiting...</p>
 
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-<style>
-body {
-    margin:0;
-    font-family: Arial;
-    background: url('https://images.unsplash.com/photo-1498050108023-c5249f4df085') no-repeat center/cover;
-    height:100vh;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-}
-
-.box {
-    background: rgba(0,0,0,0.5);
-    padding:20px;
-    border-radius:15px;
-    width:300px;
-    color:white;
-}
-
-input, button {
-    width:100%;
-    padding:10px;
-    margin:5px 0;
-    border:none;
-    border-radius:8px;
-}
-
-button {
-    background:#00c6ff;
-    color:white;
-}
-</style>
+</div>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-
 <script>
 const socket = io();
 
-let pc;
-let localStream;
-let currentCaller = null;
+socket.on("connect", ()=>{
+    socket.emit("register", {email: "{{ email }}"});
 
-const myEmail = "{{ email }}";
-const urlParams = new URLSearchParams(window.location.search);
-let target = urlParams.get("target");
-
-const config = {
-    iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
-};
-
-// 🎤 Mic access
-async function init(){
-    localStream = await navigator.mediaDevices.getUserMedia({audio:true});
-}
-init();
-
-// Create Peer
-function createPeer(){
-    pc = new RTCPeerConnection(config);
-
-    localStream.getTracks().forEach(track=>{
-        pc.addTrack(track, localStream);
-    });
-
-    pc.ontrack = e=>{
-        document.getElementById("remoteAudio").srcObject = e.streams[0];
-    };
-
-    pc.onicecandidate = e=>{
-        if(e.candidate){
-            socket.emit("ice_candidate", {
-                to: target,
-                from: myEmail,
-                candidate: e.candidate
-            });
-        }
-    };
-}
-
-// 📞 CALL USER (Caller side)
-function startCall(){
     socket.emit("call_user", {
-        to: target,
-        from: myEmail
+        to: "{{ target }}",
+        from: "{{ email }}"
     });
+});
 
-    document.getElementById("status").innerText = "Calling...";
-}
-
-// 📲 RECEIVER GETS CALL
+// RECEIVE CALL
 socket.on("incoming_call", (data)=>{
-    currentCaller = data.from;
-    target = data.from;
-
-    document.getElementById("status").innerText =
-        "Incoming call from " + currentCaller;
+    document.getElementById("status").innerText = "Incoming from " + data.from;
 });
 
-// ✅ ACCEPT CALL
-async function acceptCall(){
-    createPeer();
-
-    document.getElementById("status").innerText = "Connecting...";
-
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
-
-    socket.emit("webrtc_offer", {
-        to: target,
-        from: myEmail,
-        offer: offer
+// ACCEPT
+function accept(){
+    socket.emit("accept_call", {
+        to: "{{ target }}",
+        from: "{{ email }}"
     });
+    document.getElementById("status").innerText = "Connected";
 }
 
-// ❌ REJECT CALL
-function rejectCall(){
+// REJECT
+function reject(){
     socket.emit("reject_call", {
-        to: target,
-        from: myEmail
+        to: "{{ target }}",
+        from: "{{ email }}"
     });
-
-    document.getElementById("status").innerText = "Call Rejected";
+    document.getElementById("status").innerText = "Rejected";
 }
 
-// 📡 RECEIVE OFFER
-socket.on("webrtc_offer", async (data)=>{
-    target = data.from;
-
-    createPeer();
-
-    await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
-
-    const answer = await pc.createAnswer();
-    await pc.setLocalDescription(answer);
-
-    socket.emit("webrtc_answer", {
-        to: target,
-        from: myEmail,
-        answer: answer
-    });
-
-    document.getElementById("status").innerText = "Call Connected";
+// RESPONSE
+socket.on("call_accepted", ()=>{
+    document.getElementById("status").innerText = "Call Accepted";
 });
 
-// 📡 RECEIVE ANSWER
-socket.on("webrtc_answer", async (data)=>{
-    await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
-    document.getElementById("status").innerText = "Call Connected";
-});
-
-// 📡 ICE
-socket.on("ice_candidate", async (data)=>{
-    try {
-        await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
-    } catch(e){
-        console.error(e);
-    }
-});
-const socket = io();
-
-// ✅ REGISTER USER AFTER CONNECT
-socket.on("connect", () => {
-    socket.emit("register", {
-        email: "{{ email }}"
-    });
-});
-// ❌ CALL REJECTED
 socket.on("call_rejected", ()=>{
     document.getElementById("status").innerText = "Call Rejected";
 });
-
-// 🔥 AUTO START CALL (caller only)
-if(target){
-    startCall();
-}
 </script>
 
 </body>

@@ -1,83 +1,32 @@
-/* RESET */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Segoe UI', sans-serif;
-}
-
-/* BACKGROUND (ALL PAGES) */
 body {
-    height: 100vh;
-    background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)),
-    url("https://images.unsplash.com/photo-1525182008055-f88b95ff7980");
-    background-size: cover;
-    background-position: center;
-    color: white;
+    margin:0;
+    font-family: Arial;
+    background: url('https://images.unsplash.com/photo-1492724441997-5dc865305da7') no-repeat center/cover;
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
 }
 
-/* CENTER CARD */
 .card {
-    width: 350px;
-    margin: 100px auto;
-    background: rgba(255,255,255,0.1);
-    backdrop-filter: blur(15px);
-    padding: 30px;
-    border-radius: 15px;
-    text-align: center;
+    background: rgba(0,0,0,0.6);
+    padding:30px;
+    border-radius:15px;
+    width:300px;
+    color:white;
+    text-align:center;
 }
 
-/* INPUT */
-input {
-    width: 100%;
-    padding: 12px;
-    margin: 10px 0;
-    border: none;
-    border-radius: 8px;
+input, button {
+    width:100%;
+    padding:10px;
+    margin:5px 0;
+    border:none;
+    border-radius:8px;
 }
 
-/* BUTTON */
 button {
-    width: 100%;
-    padding: 12px;
-    background: #00c6ff;
-    border: none;
-    color: white;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: 0.3s;
-}
-
-button:hover {
-    background: #0072ff;
-}
-
-/* USER LIST */
-ul {
-    list-style: none;
-    padding: 20px;
-}
-
-li {
-    background: rgba(255,255,255,0.1);
-    margin: 10px;
-    padding: 10px;
-    border-radius: 8px;
-}
-
-/* CALL BUTTON */
-.call-btn {
-    background: green;
-    margin-left: 10px;
-}
-
-/* ACCEPT / REJECT */
-.accept {
-    background: green;
-    margin: 10px;
-}
-
-.reject {
-    background: red;
-    margin: 10px;
+    background:#00c6ff;
+    color:white;
+    cursor:pointer;
 }
