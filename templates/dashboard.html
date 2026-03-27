@@ -41,11 +41,23 @@ button {
 <div class="box">
 <h3>Welcome {{ email }}</h3>
 
-<input id="target" placeholder="Enter email to call">
-<button onclick="callUser()">📞 Call</button>
+<input type="text" id="targetEmail" placeholder="Enter email to call">
 
-<hr>
+<button onclick="callUser()">Call</button>
 
+<script>
+function callUser() {
+    const email = document.getElementById("targetEmail").value;
+
+    if (!email) {
+        alert("Enter email");
+        return;
+    }
+
+    // ✅ Correct redirect
+    window.location.href = "/call?target=" + email;
+}
+</script>
 <input id="msg" placeholder="Type message">
 <button onclick="sendMsg()">Send</button>
 

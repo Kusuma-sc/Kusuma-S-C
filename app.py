@@ -34,7 +34,16 @@ def call():
 
 
 # ---------------- SOCKET ---------------- #
+@app.route('/call')
+def call():
+    if 'email' not in session:
+        return redirect("/")
 
+    target = request.args.get("target")  # ✅ IMPORTANT
+
+    return render_template("call.html",
+                           email=session['email'],
+                           target=target)
 @socketio.on('connect')
 def connect():
     if 'email' in session:
