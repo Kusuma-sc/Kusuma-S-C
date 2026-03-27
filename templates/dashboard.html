@@ -2,6 +2,7 @@
 <html>
 <head>
 <title>Dashboard</title>
+
 <style>
 body {
     margin:0;
@@ -14,11 +15,12 @@ body {
 }
 
 .box {
-    background: rgba(0,0,0,0.5);
+    background: rgba(0,0,0,0.6);
     padding:20px;
     border-radius:15px;
-    width:300px;
+    width:320px;
     color:white;
+    text-align:center;
 }
 
 input, button {
@@ -32,6 +34,14 @@ input, button {
 button {
     background:#00c6ff;
     color:white;
+    cursor:pointer;
+}
+
+#chat {
+    max-height:150px;
+    overflow-y:auto;
+    text-align:left;
+    margin-top:10px;
 }
 </style>
 </head>
@@ -39,25 +49,16 @@ button {
 <body>
 
 <div class="box">
+
 <h3>Welcome {{ email }}</h3>
 
+<!-- 📞 CALL -->
 <input type="text" id="targetEmail" placeholder="Enter email to call">
+<button onclick="callUser()">📞 Call</button>
 
-<button onclick="callUser()">Call</button>
+<hr>
 
-<script>
-function callUser() {
-    const email = document.getElementById("targetEmail").value;
-
-    if (!email) {
-        alert("Enter email");
-        return;
-    }
-
-    // ✅ Correct redirect
-    window.location.href = "/call?target=" + email;
-}
-</script>
+<!-- 💬 CHAT -->
 <input id="msg" placeholder="Type message">
 <button onclick="sendMsg()">Send</button>
 
@@ -70,18 +71,37 @@ function callUser() {
 <script>
 const socket = io();
 
+// 💬 SEND MESSAGE
 function sendMsg(){
     const msg = document.getElementById("msg").value;
-    socket.emit("send_message", {msg:msg});
+
+    if(!msg) return;
+
+    socket.emit("send_message", {
+        msg: msg,
+        user: "{{ email }}"
+    });
+
+    document.getElementById("msg").value = "";
 }
 
+// 💬 RECEIVE MESSAGE
 socket.on("receive_message", data=>{
-    document.getElementById("chat").innerHTML += "<p>"+data.msg+"</p>";
+    document.getElementById("chat").innerHTML +=
+        "<p><b>" + data.user + ":</b> " + data.msg + "</p>";
 });
 
-function callUser(){
-    const target = document.getElementById("target").value;
-    window.open("/call?target="+target,"_blank");
+// 📞 CALL USER (FIXED)
+function callUser() {
+    const target = document.getElementById("targetEmail").value;
+
+    if (!target) {
+        alert("Enter email");
+        return;
+    }
+
+    // ✅ Correct navigation
+    window.location.href = "/call?target=" + target;
 }
 </script>
 
