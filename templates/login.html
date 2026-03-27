@@ -1,51 +1,49 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Login</title>
-    <style>
-        body {
-            margin: 0;
-            font-family: Arial;
-            background: linear-gradient(to right, #667eea, #764ba2);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
+<title>Login</title>
+<style>
+body {
+    margin:0;
+    font-family: Arial;
+    background: url('https://images.unsplash.com/photo-1522202176988-66273c2fd55f') no-repeat center/cover;
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
 
-        .box {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            text-align: center;
-            width: 300px;
-        }
+.box {
+    background: rgba(255,255,255,0.2);
+    padding:30px;
+    border-radius:15px;
+    backdrop-filter: blur(10px);
+    text-align:center;
+}
 
-        input {
-            width: 90%;
-            padding: 10px;
-            margin: 10px;
-        }
+input, button {
+    width:100%;
+    padding:10px;
+    margin:10px 0;
+    border:none;
+    border-radius:8px;
+}
 
-        button {
-            padding: 10px 20px;
-            background: #667eea;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-    </style>
+button {
+    background:#00c6ff;
+    color:white;
+}
+</style>
 </head>
+
 <body>
-
 <div class="box">
-    <h2>Login</h2>
-
-    <form action="/chat" method="POST">
-        <input type="email" name="email" placeholder="Enter Email" required>
-        <button type="submit">Login</button>
-    </form>
+<h2>Login</h2>
+<form action="/dashboard" method="POST">
+<input type="email" name="email" placeholder="Email" required>
+<input type="password" placeholder="Password" required>
+<button>Login</button>
+</form>
 </div>
-
 </body>
 </html>

@@ -1,81 +1,55 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Chat Dashboard</title>
-    <style>
-        body {
-            font-family: Arial;
-            margin: 0;
-            background: #f4f6f9;
-        }
+<title>Dashboard</title>
+<style>
+body {
+    margin:0;
+    font-family: Arial;
+    background: url('https://images.unsplash.com/photo-1498050108023-c5249f4df085') no-repeat center/cover;
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
 
-        .header {
-            background: #667eea;
-            color: white;
-            padding: 15px;
-        }
+.box {
+    background: rgba(0,0,0,0.5);
+    padding:20px;
+    border-radius:15px;
+    width:300px;
+    color:white;
+}
 
-        .container {
-            display: flex;
-            height: 90vh;
-        }
+input, button {
+    width:100%;
+    padding:10px;
+    margin:5px 0;
+    border:none;
+    border-radius:8px;
+}
 
-        .sidebar {
-            width: 30%;
-            background: #fff;
-            border-right: 1px solid #ccc;
-            padding: 10px;
-        }
-
-        .chat {
-            width: 70%;
-            padding: 20px;
-        }
-
-        .user {
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-            cursor: pointer;
-        }
-
-        .user:hover {
-            background: #eee;
-        }
-
-        input {
-            width: 80%;
-            padding: 10px;
-        }
-
-        button {
-            padding: 10px;
-            margin: 5px;
-        }
-    </style>
+button {
+    background:#00c6ff;
+    color:white;
+}
+</style>
 </head>
+
 <body>
 
-<div class="header">
-    Logged in as: {{ email }}
-</div>
+<div class="box">
+<h3>Welcome {{ email }}</h3>
 
-<div class="container">
+<input id="target" placeholder="Enter email to call">
+<button onclick="callUser()">📞 Call</button>
 
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <h3>Call User</h3>
-        <input type="text" id="target" placeholder="Enter email">
-        <button onclick="callUser()">Call</button>
-    </div>
+<hr>
 
-    <!-- Chat -->
-    <div class="chat">
-        <h3>Chat</h3>
-        <div id="messages"></div>
+<input id="msg" placeholder="Type message">
+<button onclick="sendMsg()">Send</button>
 
-        <input type="text" id="msg">
-        <button onclick="sendMessage()">Send</button>
-    </div>
+<div id="chat"></div>
 
 </div>
 
@@ -84,30 +58,18 @@
 <script>
 const socket = io();
 
-function sendMessage() {
+function sendMsg(){
     const msg = document.getElementById("msg").value;
-
-    socket.emit("message", {
-        msg: msg,
-        user: "{{ email }}"
-    });
+    socket.emit("send_message", {msg:msg});
 }
 
-socket.on("message", (data) => {
-    document.getElementById("messages").innerHTML +=
-        "<p><b>" + data.user + ":</b> " + data.msg + "</p>";
+socket.on("receive_message", data=>{
+    document.getElementById("chat").innerHTML += "<p>"+data.msg+"</p>";
 });
 
-// Call user
-function callUser() {
+function callUser(){
     const target = document.getElementById("target").value;
-
-    socket.emit("call_user", {
-        from: "{{ email }}",
-        target: target
-    });
-
-    window.location.href = "/call";
+    window.open("/call?target="+target,"_blank");
 }
 </script>
 

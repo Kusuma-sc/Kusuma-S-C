@@ -1,37 +1,76 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Dashboard</title>
+<title>Dashboard</title>
+<style>
+body {
+    margin:0;
+    font-family: Arial;
+    background: url('https://images.unsplash.com/photo-1498050108023-c5249f4df085') no-repeat center/cover;
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+.box {
+    background: rgba(0,0,0,0.5);
+    padding:20px;
+    border-radius:15px;
+    width:300px;
+    color:white;
+}
+
+input, button {
+    width:100%;
+    padding:10px;
+    margin:5px 0;
+    border:none;
+    border-radius:8px;
+}
+
+button {
+    background:#00c6ff;
+    color:white;
+}
+</style>
 </head>
+
 <body>
 
-<h2>Welcome {{ email }}</h2>
+<div class="box">
+<h3>Welcome {{ email }}</h3>
 
-<h3>Make Call</h3>
+<input id="target" placeholder="Enter email to call">
+<button onclick="callUser()">📞 Call</button>
 
-<input type="text" id="target" placeholder="Enter receiver email">
-<button onclick="startCall()">Call</button>
+<hr>
 
-<a href="/call">Open Call Screen</a>
+<input id="msg" placeholder="Type message">
+<button onclick="sendMsg()">Send</button>
+
+<div id="chat"></div>
+
+</div>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
 <script>
 const socket = io();
 
-function startCall() {
-    let target = document.getElementById("target").value;
-
-    socket.emit("call_user", {
-        from: "{{ email }}",
-        target: target
-    });
-
-    alert("Calling " + target);
+function sendMsg(){
+    const msg = document.getElementById("msg").value;
+    socket.emit("send_message", {msg:msg});
 }
 
-socket.on("incoming_call", (data) => {
-    alert("Incoming call from " + data.from);
+socket.on("receive_message", data=>{
+    document.getElementById("chat").innerHTML += "<p>"+data.msg+"</p>";
 });
+
+function callUser(){
+    const target = document.getElementById("target").value;
+    window.open("/call?target="+target,"_blank");
+}
 </script>
 
 </body>
