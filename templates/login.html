@@ -6,8 +6,8 @@
 <style>
 body {
     margin:0;
-    font-family: Arial;
-    background: linear-gradient(to right,#667eea,#764ba2);
+    font-family: 'Segoe UI';
+    background: url('https://images.unsplash.com/photo-1519389950473-47ba0277781c') no-repeat center/cover;
     height:100vh;
     display:flex;
     justify-content:center;
@@ -15,22 +15,30 @@ body {
 }
 
 .box {
-    background:white;
-    padding:30px;
-    border-radius:10px;
+    background: rgba(0,0,0,0.6);
+    padding:40px;
+    border-radius:15px;
+    color:white;
     text-align:center;
+    width:300px;
 }
 
-input, button {
+input {
     width:100%;
     padding:10px;
     margin:10px 0;
+    border:none;
+    border-radius:8px;
 }
 
 button {
-    background:#667eea;
+    width:100%;
+    padding:10px;
+    background:#00c6ff;
     color:white;
     border:none;
+    border-radius:8px;
+    cursor:pointer;
 }
 </style>
 </head>
@@ -38,10 +46,10 @@ button {
 <body>
 
 <div class="box">
-<h2>Login</h2>
+<h2>🔐 Voice App Login</h2>
 
 <form action="/dashboard" method="POST">
-<input type="email" name="email" placeholder="Email" required>
+<input type="email" name="email" placeholder="Enter Email" required>
 <button>Login</button>
 </form>
 

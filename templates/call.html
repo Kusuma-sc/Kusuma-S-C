@@ -2,17 +2,51 @@
 <html>
 <head>
 <title>Call</title>
+
+<style>
+body {
+    margin:0;
+    font-family:'Segoe UI';
+    background: url('https://images.unsplash.com/photo-1525186402429-b4ff38bedbec') no-repeat center/cover;
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    color:white;
+}
+
+.box {
+    background: rgba(0,0,0,0.7);
+    padding:30px;
+    border-radius:15px;
+    text-align:center;
+}
+
+button {
+    padding:10px 20px;
+    margin:10px;
+    border:none;
+    border-radius:8px;
+    background:#00c6ff;
+    color:white;
+    cursor:pointer;
+}
+</style>
 </head>
 
 <body>
 
-<h2>Voice Call</h2>
+<div class="box">
+
+<h2>📞 Voice Call</h2>
 <p id="status">Connecting...</p>
 
 <button onclick="acceptCall()">Accept</button>
 <button onclick="rejectCall()">Reject</button>
 
 <audio id="remoteAudio" autoplay></audio>
+
+</div>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
@@ -24,11 +58,13 @@ let localStream;
 let target = "{{ target }}";
 const myEmail = "{{ email }}";
 
+// MIC ACCESS
 navigator.mediaDevices.getUserMedia({audio:true})
 .then(stream=>{
     localStream = stream;
 });
 
+// CREATE PEER
 function createPeer(){
     pc = new RTCPeerConnection({
         iceServers:[{urls:"stun:stun.l.google.com:19302"}]
@@ -49,7 +85,7 @@ function createPeer(){
     };
 }
 
-// CALL
+// CALL USER
 socket.emit("call_user",{to:target,from:myEmail});
 
 // OFFER
@@ -62,11 +98,14 @@ socket.on("webrtc_offer", async data=>{
     await pc.setLocalDescription(answer);
 
     socket.emit("webrtc_answer",{to:data.from,answer:answer});
+
+    document.getElementById("status").innerText = "Call Connected";
 });
 
 // ANSWER
 socket.on("webrtc_answer", async data=>{
     await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+    document.getElementById("status").innerText = "Call Connected";
 });
 
 // ICE
