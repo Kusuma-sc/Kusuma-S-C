@@ -18,7 +18,11 @@
 <button onclick="sendMsg()">Send</button>
 
 <div id="chat"></div>
-
+<div id="popup" style="display:none; background:black; color:white; padding:20px; position:fixed; top:40%; left:40%;">
+    <p id="caller"></p>
+    <button onclick="acceptCall()">Accept</button>
+    <button onclick="rejectCall()">Reject</button>
+</div>
 </div>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>

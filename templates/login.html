@@ -2,12 +2,51 @@
 <html>
 <head>
 <title>Login</title>
-<link rel="stylesheet" href="/static/style.css">
+
+<style>
+body {
+    margin:0;
+    font-family: 'Segoe UI';
+    background: url('https://images.unsplash.com/photo-1519389950473-47ba0277781c') no-repeat center/cover;
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+.box {
+    background: rgba(0,0,0,0.6);
+    padding:40px;
+    border-radius:15px;
+    color:white;
+    text-align:center;
+    width:300px;
+}
+
+input {
+    width:100%;
+    padding:10px;
+    margin:10px 0;
+    border:none;
+    border-radius:8px;
+}
+
+button {
+    width:100%;
+    padding:10px;
+    background:#00c6ff;
+    color:white;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+}
+</style>
 </head>
+
 <body>
 
-<div class="card">
-<h2>Welcome</h2>
+<div class="box">
+<h2>🔐 Voice App Login</h2>
 
 <form action="/dashboard" method="POST">
 <input type="email" name="email" placeholder="Enter Email" required>
