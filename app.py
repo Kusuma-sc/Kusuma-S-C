@@ -4,94 +4,66 @@ from flask_socketio import SocketIO, emit
 app = Flask(__name__)
 app.secret_key = "secret123"
 
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 users = {}
 
-# ---------- ROUTES ----------
+# ---------------- ROUTES ---------------- #
 
 @app.route('/')
 def login():
     return render_template("login.html")
 
-
 @app.route('/dashboard', methods=['POST'])
 def dashboard():
     email = request.form.get("email")
-
-    if not email:
-        return redirect("/")
-
     session['email'] = email
     return render_template("dashboard.html", email=email)
-
 
 @app.route('/call')
 def call():
     if 'email' not in session:
         return redirect("/")
-
     target = request.args.get("target")
+    return render_template("call.html", email=session['email'], target=target)
 
-    return render_template("call.html",
-                           email=session['email'],
-                           target=target)
-
-# ---------- SOCKET ----------
+# ---------------- SOCKET ---------------- #
 
 @socketio.on('connect')
 def connect():
     if 'email' in session:
         users[session['email']] = request.sid
-
+        print("Connected:", session['email'])
 
 @socketio.on('disconnect')
 def disconnect():
     if 'email' in session:
         users.pop(session['email'], None)
 
+# 📞 CALL REQUEST
+@socketio.on('call_user')
+def call_user(data):
+    target = data['to']
+    caller = data['from']
+
+    if target in users:
+        emit('incoming_call', {'from': caller}, to=users[target])
+
+# ✅ ACCEPT CALL
+@socketio.on('accept_call')
+def accept_call(data):
+    caller = data['to']
+    receiver = data['from']
+
+    if caller in users:
+        emit('call_accepted', {'from': receiver}, to=users[caller])
 
 # 💬 CHAT
 @socketio.on('send_message')
 def message(data):
     emit('receive_message', data, broadcast=True)
 
-
-# 📞 CALL
-@socketio.on('call_user')
-def call_user(data):
-    target = data['to']
-    if target in users:
-        emit('incoming_call', {'from': data['from']}, to=users[target])
-
-
-@socketio.on('reject_call')
-def reject(data):
-    target = data['to']
-    if target in users:
-        emit('call_rejected', {}, to=users[target])
-
-
-# 🌐 WEBRTC
-@socketio.on('webrtc_offer')
-def offer(data):
-    if data['to'] in users:
-        emit('webrtc_offer', data, to=users[data['to']])
-
-
-@socketio.on('webrtc_answer')
-def answer(data):
-    if data['to'] in users:
-        emit('webrtc_answer', data, to=users[data['to']])
-
-
-@socketio.on('ice_candidate')
-def ice(data):
-    if data['to'] in users:
-        emit('ice_candidate', data, to=users[data['to']])
-
-
-# ---------- RUN ----------
+# ---------------- RUN ---------------- #
 
 if __name__ == "__main__":
-    socketio.run(app, debug=True)
+    socketio.run(app, host="0.0.0.0", port=10000)

@@ -1,125 +1,72 @@
-<!DOCTYPE html>
-<html>
-<head>
-<title>Dashboard</title>
+from flask import Flask, render_template, request, session, redirect
+from flask_socketio import SocketIO, emit
 
-<style>
-body {
-    margin:0;
-    font-family:'Segoe UI';
-    background: url('https://images.unsplash.com/photo-1492724441997-5dc865305da7') no-repeat center/cover;
-    height:100vh;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-}
+app = Flask(__name__)
+app.secret_key = "secret123"
 
-.box {
-    background: rgba(0,0,0,0.7);
-    padding:25px;
-    border-radius:15px;
-    width:350px;
-    color:white;
-}
+socketio = SocketIO(app, cors_allowed_origins="*")
 
-input, button {
-    width:100%;
-    padding:10px;
-    margin:5px 0;
-    border:none;
-    border-radius:8px;
-}
+users = {}  # email -> socket id
 
-button {
-    background:#00c6ff;
-    color:white;
-    cursor:pointer;
-}
+# ---------------- ROUTES ---------------- #
 
-#chat {
-    height:150px;
-    overflow:auto;
-    margin-top:10px;
-}
-</style>
-</head>
+@app.route('/')
+def login():
+    return render_template("login.html")
 
-<body>
+@app.route('/dashboard', methods=['POST'])
+def dashboard():
+    email = request.form.get("email")
+    session['email'] = email
+    return render_template("dashboard.html", email=email)
 
-<div class="box">
+@app.route('/call')
+def call():
+    if 'email' not in session:
+        return redirect("/")
+    target = request.args.get("target")
+    return render_template("call.html", email=session['email'], target=target)
 
-<h3>👤 {{ email }}</h3>
+# ---------------- SOCKET ---------------- #
 
-<!-- CALL -->
-<input id="targetEmail" placeholder="Enter email to call">
-<button onclick="callUser()">📞 Start Call</button>
+@socketio.on('connect')
+def connect():
+    if 'email' in session:
+        users[session['email']] = request.sid
+        print("Connected:", session['email'])
 
-<hr>
+@socketio.on('disconnect')
+def disconnect():
+    if 'email' in session:
+        users.pop(session['email'], None)
 
-<!-- CHAT -->
-<input id="msg" placeholder="Type message">
-<button onclick="sendMsg()">Send</button>
+# ✅ SEND CALL TO RECEIVER
+@socketio.on('call_user')
+def call_user(data):
+    target = data['to']
+    caller = data['from']
 
-<div id="chat"></div>
+    print("Calling:", target)
 
-</div>
+    if target in users:
+        emit('incoming_call', {'from': caller}, to=users[target])
 
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+# ✅ ACCEPT CALL
+@socketio.on('accept_call')
+def accept_call(data):
+    caller = data['to']
+    receiver = data['from']
 
-<script>
-const socket = io();
+    if caller in users:
+        emit('call_accepted', {'from': receiver}, to=users[caller])
 
-// SEND MESSAGE
-function sendMsg(){
-    const msg = document.getElementById("msg").value;
+# ---------------- CHAT ---------------- #
 
-    if(!msg) return;
+@socketio.on('send_message')
+def msg(data):
+    emit('receive_message', data, broadcast=True)
 
-    socket.emit("send_message", {
-        msg: msg,
-        user: "{{ email }}"
-    });
+# ---------------- RUN ---------------- #
 
-    document.getElementById("msg").value = "";
-}
-
-// RECEIVE MESSAGE
-socket.on("receive_message", data=>{
-    document.getElementById("chat").innerHTML +=
-        "<p><b>"+data.user+":</b> "+data.msg+"</p>";
-});
-
-// CALL
-function callUser(){
-    const target = document.getElementById("targetEmail").value;
-
-    if(!target){
-        alert("Enter email");
-        return;
-    }
-
-    window.location.href = "/call?target=" + target;
-}
-</script>
-<script>
-const socket = io();
-
-// 📞 INCOMING CALL POPUP (FIX)
-socket.on("incoming_call", (data) => {
-
-    const accept = confirm("📞 Incoming call from " + data.from);
-
-    if (accept) {
-        // 👉 go to call page
-        window.location.href = "/call?target=" + data.from;
-    } else {
-        // 👉 reject call
-        socket.emit("reject_call", {
-            to: data.from
-        });
-    }
-});
-</script>
-
-</body>
-</html>
+if __name__ == "__main__":
+    socketio.run(app, host="0.0.0.0", port=10000)

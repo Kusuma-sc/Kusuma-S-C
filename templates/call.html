@@ -2,51 +2,51 @@
 <html>
 <head>
 <title>Call</title>
-
-<style>
-body {
-    margin:0;
-    font-family:'Segoe UI';
-    background: url('https://images.unsplash.com/photo-1525186402429-b4ff38bedbec') no-repeat center/cover;
-    height:100vh;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    color:white;
-}
-
-.box {
-    background: rgba(0,0,0,0.7);
-    padding:30px;
-    border-radius:15px;
-    text-align:center;
-}
-
-button {
-    padding:10px 20px;
-    margin:10px;
-    border:none;
-    border-radius:8px;
-    background:#00c6ff;
-    color:white;
-    cursor:pointer;
-}
-</style>
 </head>
 
 <body>
 
-<div class="box">
-
-<h2>📞 Voice Call</h2>
-<p id="status">Connecting...</p>
+<h2>Voice Call</h2>
+<p id="status">Idle</p>
 
 <button onclick="acceptCall()">Accept</button>
 <button onclick="rejectCall()">Reject</button>
 
 <audio id="remoteAudio" autoplay></audio>
 
-</div>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<style>
+body {
+    margin:0;
+    font-family: Arial;
+    background: url('https://images.unsplash.com/photo-1498050108023-c5249f4df085') no-repeat center/cover;
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+.box {
+    background: rgba(0,0,0,0.5);
+    padding:20px;
+    border-radius:15px;
+    width:300px;
+    color:white;
+}
+
+input, button {
+    width:100%;
+    padding:10px;
+    margin:5px 0;
+    border:none;
+    border-radius:8px;
+}
+
+button {
+    background:#00c6ff;
+    color:white;
+}
+</style>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
@@ -55,20 +55,25 @@ const socket = io();
 
 let pc;
 let localStream;
-let target = "{{ target }}";
+let currentCaller = null;
+
 const myEmail = "{{ email }}";
+const urlParams = new URLSearchParams(window.location.search);
+let target = urlParams.get("target");
 
-// MIC ACCESS
-navigator.mediaDevices.getUserMedia({audio:true})
-.then(stream=>{
-    localStream = stream;
-});
+const config = {
+    iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+};
 
-// CREATE PEER
+// 🎤 Mic access
+async function init(){
+    localStream = await navigator.mediaDevices.getUserMedia({audio:true});
+}
+init();
+
+// Create Peer
 function createPeer(){
-    pc = new RTCPeerConnection({
-        iceServers:[{urls:"stun:stun.l.google.com:19302"}]
-    });
+    pc = new RTCPeerConnection(config);
 
     localStream.getTracks().forEach(track=>{
         pc.addTrack(track, localStream);
@@ -80,21 +85,64 @@ function createPeer(){
 
     pc.onicecandidate = e=>{
         if(e.candidate){
-            socket.emit("ice_candidate",{to:target,candidate:e.candidate});
+            socket.emit("ice_candidate", {
+                to: target,
+                from: myEmail,
+                candidate: e.candidate
+            });
         }
     };
 }
 
-// CALL USER
+// 📞 CALL USER (Caller side)
 function startCall(){
     socket.emit("call_user", {
         to: target,
         from: myEmail
     });
+
+    document.getElementById("status").innerText = "Calling...";
 }
 
-// OFFER
-socket.on("webrtc_offer", async data=>{
+// 📲 RECEIVER GETS CALL
+socket.on("incoming_call", (data)=>{
+    currentCaller = data.from;
+    target = data.from;
+
+    document.getElementById("status").innerText =
+        "Incoming call from " + currentCaller;
+});
+
+// ✅ ACCEPT CALL
+async function acceptCall(){
+    createPeer();
+
+    document.getElementById("status").innerText = "Connecting...";
+
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+
+    socket.emit("webrtc_offer", {
+        to: target,
+        from: myEmail,
+        offer: offer
+    });
+}
+
+// ❌ REJECT CALL
+function rejectCall(){
+    socket.emit("reject_call", {
+        to: target,
+        from: myEmail
+    });
+
+    document.getElementById("status").innerText = "Call Rejected";
+}
+
+// 📡 RECEIVE OFFER
+socket.on("webrtc_offer", async (data)=>{
+    target = data.from;
+
     createPeer();
 
     await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
@@ -102,21 +150,46 @@ socket.on("webrtc_offer", async data=>{
     const answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
 
-    socket.emit("webrtc_answer",{to:data.from,answer:answer});
+    socket.emit("webrtc_answer", {
+        to: target,
+        from: myEmail,
+        answer: answer
+    });
 
     document.getElementById("status").innerText = "Call Connected";
 });
 
-// ANSWER
-socket.on("webrtc_answer", async data=>{
+// 📡 RECEIVE ANSWER
+socket.on("webrtc_answer", async (data)=>{
     await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
     document.getElementById("status").innerText = "Call Connected";
 });
 
-// ICE
-socket.on("ice_candidate", async data=>{
-    await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+// 📡 ICE
+socket.on("ice_candidate", async (data)=>{
+    try {
+        await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+    } catch(e){
+        console.error(e);
+    }
 });
+const socket = io();
+
+// ✅ REGISTER USER AFTER CONNECT
+socket.on("connect", () => {
+    socket.emit("register", {
+        email: "{{ email }}"
+    });
+});
+// ❌ CALL REJECTED
+socket.on("call_rejected", ()=>{
+    document.getElementById("status").innerText = "Call Rejected";
+});
+
+// 🔥 AUTO START CALL (caller only)
+if(target){
+    startCall();
+}
 </script>
 
 </body>
