@@ -2,11 +2,12 @@
 <html>
 <head>
 <title>Login</title>
+
 <style>
 body {
     margin:0;
     font-family: Arial;
-    background: url('https://images.unsplash.com/photo-1522202176988-66273c2fd55f') no-repeat center/cover;
+    background: linear-gradient(to right,#667eea,#764ba2);
     height:100vh;
     display:flex;
     justify-content:center;
@@ -14,10 +15,9 @@ body {
 }
 
 .box {
-    background: rgba(255,255,255,0.2);
+    background:white;
     padding:30px;
-    border-radius:15px;
-    backdrop-filter: blur(10px);
+    border-radius:10px;
     text-align:center;
 }
 
@@ -25,25 +25,27 @@ input, button {
     width:100%;
     padding:10px;
     margin:10px 0;
-    border:none;
-    border-radius:8px;
 }
 
 button {
-    background:#00c6ff;
+    background:#667eea;
     color:white;
+    border:none;
 }
 </style>
 </head>
 
 <body>
+
 <div class="box">
 <h2>Login</h2>
+
 <form action="/dashboard" method="POST">
 <input type="email" name="email" placeholder="Email" required>
-<input type="password" placeholder="Password" required>
 <button>Login</button>
 </form>
+
 </div>
+
 </body>
 </html>

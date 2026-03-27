@@ -8,7 +8,7 @@ socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
 
 users = {}
 
-# ---------------- ROUTES ---------------- #
+# ---------- ROUTES ----------
 
 @app.route('/')
 def login():
@@ -30,20 +30,15 @@ def dashboard():
 def call():
     if 'email' not in session:
         return redirect("/")
-    return render_template("call.html", email=session['email'])
 
-
-# ---------------- SOCKET ---------------- #
-@app.route('/call')
-def call():
-    if 'email' not in session:
-        return redirect("/")
-
-    target = request.args.get("target")  # ✅ IMPORTANT
+    target = request.args.get("target")
 
     return render_template("call.html",
                            email=session['email'],
                            target=target)
+
+# ---------- SOCKET ----------
+
 @socketio.on('connect')
 def connect():
     if 'email' in session:
@@ -56,53 +51,47 @@ def disconnect():
         users.pop(session['email'], None)
 
 
-# 📩 CHAT
+# 💬 CHAT
 @socketio.on('send_message')
-def handle_message(data):
+def message(data):
     emit('receive_message', data, broadcast=True)
-    https: // kusuma - s - c - 2.
-    onrender.com
 
 
-# 📞 CALL REQUEST
+# 📞 CALL
 @socketio.on('call_user')
 def call_user(data):
     target = data['to']
     if target in users:
-        emit('incoming_call', data, to=users[target])
+        emit('incoming_call', {'from': data['from']}, to=users[target])
 
 
-# ❌ REJECT CALL
 @socketio.on('reject_call')
-def reject_call(data):
+def reject(data):
     target = data['to']
     if target in users:
         emit('call_rejected', {}, to=users[target])
 
 
-# 📡 WEBRTC
+# 🌐 WEBRTC
 @socketio.on('webrtc_offer')
 def offer(data):
-    target = data['to']
-    if target in users:
-        emit('webrtc_offer', data, to=users[target])
+    if data['to'] in users:
+        emit('webrtc_offer', data, to=users[data['to']])
 
 
 @socketio.on('webrtc_answer')
 def answer(data):
-    target = data['to']
-    if target in users:
-        emit('webrtc_answer', data, to=users[target])
+    if data['to'] in users:
+        emit('webrtc_answer', data, to=users[data['to']])
 
 
 @socketio.on('ice_candidate')
 def ice(data):
-    target = data['to']
-    if target in users:
-        emit('ice_candidate', data, to=users[target])
+    if data['to'] in users:
+        emit('ice_candidate', data, to=users[data['to']])
 
 
-# ---------------- RUN ---------------- #
+# ---------- RUN ----------
 
 if __name__ == "__main__":
     socketio.run(app, debug=True)

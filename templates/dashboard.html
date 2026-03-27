@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Dashboard</title>
+<title>Login</title>
 
 <style>
 body {
     margin:0;
     font-family: Arial;
-    background: url('https://images.unsplash.com/photo-1498050108023-c5249f4df085') no-repeat center/cover;
+    background: linear-gradient(to right,#667eea,#764ba2);
     height:100vh;
     display:flex;
     justify-content:center;
@@ -15,33 +15,22 @@ body {
 }
 
 .box {
-    background: rgba(0,0,0,0.6);
-    padding:20px;
-    border-radius:15px;
-    width:320px;
-    color:white;
+    background:white;
+    padding:30px;
+    border-radius:10px;
     text-align:center;
 }
 
 input, button {
     width:100%;
     padding:10px;
-    margin:5px 0;
-    border:none;
-    border-radius:8px;
+    margin:10px 0;
 }
 
 button {
-    background:#00c6ff;
+    background:#667eea;
     color:white;
-    cursor:pointer;
-}
-
-#chat {
-    max-height:150px;
-    overflow-y:auto;
-    text-align:left;
-    margin-top:10px;
+    border:none;
 }
 </style>
 </head>
@@ -49,61 +38,14 @@ button {
 <body>
 
 <div class="box">
+<h2>Login</h2>
 
-<h3>Welcome {{ email }}</h3>
-
-<!-- 📞 CALL -->
-<input type="text" id="targetEmail" placeholder="Enter email to call">
-<button onclick="callUser()">📞 Call</button>
-
-<hr>
-
-<!-- 💬 CHAT -->
-<input id="msg" placeholder="Type message">
-<button onclick="sendMsg()">Send</button>
-
-<div id="chat"></div>
+<form action="/dashboard" method="POST">
+<input type="email" name="email" placeholder="Email" required>
+<button>Login</button>
+</form>
 
 </div>
-
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-
-<script>
-const socket = io();
-
-// 💬 SEND MESSAGE
-function sendMsg(){
-    const msg = document.getElementById("msg").value;
-
-    if(!msg) return;
-
-    socket.emit("send_message", {
-        msg: msg,
-        user: "{{ email }}"
-    });
-
-    document.getElementById("msg").value = "";
-}
-
-// 💬 RECEIVE MESSAGE
-socket.on("receive_message", data=>{
-    document.getElementById("chat").innerHTML +=
-        "<p><b>" + data.user + ":</b> " + data.msg + "</p>";
-});
-
-// 📞 CALL USER (FIXED)
-function callUser() {
-    const target = document.getElementById("targetEmail").value;
-
-    if (!target) {
-        alert("Enter email");
-        return;
-    }
-
-    // ✅ Correct navigation
-    window.location.href = "/call?target=" + target;
-}
-</script>
 
 </body>
 </html>
