@@ -51,6 +51,8 @@ def disconnect():
 @socketio.on('send_message')
 def handle_message(data):
     emit('receive_message', data, broadcast=True)
+    https: // kusuma - s - c - 2.
+    onrender.com
 
 
 # 📞 CALL REQUEST
