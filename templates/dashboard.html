@@ -26,29 +26,72 @@
 </div>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+<div id="popup" style="display:none; background:black; color:white; padding:20px; position:fixed; top:40%; left:40%;">
+    <p id="caller"></p>
+    <button onclick="acceptCall()">Accept</button>
+    <button onclick="rejectCall()">Reject</button>
+</div>
+
 <script>
 const socket = io();
+let incomingCaller = "";
 
-// REGISTER USER
+// REGISTER
 socket.on("connect", ()=>{
     socket.emit("register", {email: "{{ email }}"});
-});
-
-// CHAT
-function sendMsg(){
-    let msg = document.getElementById("msg").value;
-    socket.emit("send_message", {msg: "{{email}}: " + msg});
-}
-
-socket.on("receive_message", data=>{
-    document.getElementById("chat").innerHTML += "<p>"+data.msg+"</p>";
 });
 
 // CALL
 function callUser(){
     let target = document.getElementById("target").value;
-    window.open("/call?target="+target,"_blank");
+
+    socket.emit("call_user", {
+        to: target,
+        from: "{{ email }}"
+    });
+
+    alert("Calling...");
 }
+
+// 🔥 RECEIVER POPUP
+socket.on("incoming_call", (data)=>{
+    incomingCaller = data.from;
+
+    document.getElementById("popup").style.display = "block";
+    document.getElementById("caller").innerText =
+        "Incoming call from " + data.from;
+});
+
+// ACCEPT
+function acceptCall(){
+    socket.emit("accept_call", {
+        to: incomingCaller,
+        from: "{{ email }}"
+    });
+
+    window.open("/call?target="+incomingCaller, "_blank");
+}
+
+// REJECT
+function rejectCall(){
+    socket.emit("reject_call", {
+        to: incomingCaller,
+        from: "{{ email }}"
+    });
+
+    document.getElementById("popup").style.display = "none";
+}
+
+// CALLER RESPONSE
+socket.on("call_accepted", (data)=>{
+    window.open("/call?target="+data.from, "_blank");
+});
+
+socket.on("call_rejected", ()=>{
+    alert("Call Rejected");
+});
 </script>
 
 </body>

@@ -17,6 +17,8 @@ def login():
 @app.route('/dashboard', methods=['POST'])
 def dashboard():
     email = request.form.get("email")
+    if not email:
+        return redirect("/")
     session['email'] = email
     return render_template("dashboard.html", email=email)
 
@@ -29,38 +31,54 @@ def call():
 
 # ---------------- SOCKET ---------------- #
 
-@socketio.on('connect')
-def connect():
-    if 'email' in session:
-        users[session['email']] = request.sid
-        print("Connected:", session['email'])
+@socketio.on('register')
+def register(data):
+    users[data['email']] = request.sid
 
 @socketio.on('disconnect')
 def disconnect():
-    if 'email' in session:
-        users.pop(session['email'], None)
+    for email, sid in list(users.items()):
+        if sid == request.sid:
+            users.pop(email)
+            break
 
 # 📞 CALL REQUEST
 @socketio.on('call_user')
 def call_user(data):
-    target = data['to']
-    caller = data['from']
+    if data['to'] in users:
+        emit('incoming_call', {'from': data['from']}, to=users[data['to']])
 
-    if target in users:
-        emit('incoming_call', {'from': caller}, to=users[target])
-
-# ✅ ACCEPT CALL
+# ✅ ACCEPT
 @socketio.on('accept_call')
 def accept_call(data):
-    caller = data['to']
-    receiver = data['from']
+    if data['to'] in users:
+        emit('call_accepted', {'from': data['from']}, to=users[data['to']])
 
-    if caller in users:
-        emit('call_accepted', {'from': receiver}, to=users[caller])
+# ❌ REJECT
+@socketio.on('reject_call')
+def reject_call(data):
+    if data['to'] in users:
+        emit('call_rejected', {}, to=users[data['to']])
+
+# 🎧 WEBRTC SIGNALING
+@socketio.on('offer')
+def offer(data):
+    if data['to'] in users:
+        emit('offer', data, to=users[data['to']])
+
+@socketio.on('answer')
+def answer(data):
+    if data['to'] in users:
+        emit('answer', data, to=users[data['to']])
+
+@socketio.on('ice')
+def ice(data):
+    if data['to'] in users:
+        emit('ice', data, to=users[data['to']])
 
 # 💬 CHAT
 @socketio.on('send_message')
-def message(data):
+def msg(data):
     emit('receive_message', data, broadcast=True)
 
 # ---------------- RUN ---------------- #

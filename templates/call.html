@@ -1,80 +1,90 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Call</title>
-<link rel="stylesheet" href="/static/style.css">
+<title>Voice Call</title>
 </head>
 <body>
 
-<div class="card">
-<h2>Calling {{ target }}</h2>
+<h2>Call with {{ target }}</h2>
+<p id="status">Connecting...</p>
 
-<button onclick="accept()">Accept</button>
-<button onclick="reject()">Reject</button>
-
-<p id="status">Waiting...</p>
-
-</div>
+<audio id="remoteAudio" autoplay></audio>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
 <script>
 const socket = io();
+let pc;
+let localStream;
 
-let incomingCaller = "";
+const config = {
+    iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+};
 
 // REGISTER
 socket.on("connect", ()=>{
     socket.emit("register", {email: "{{ email }}"});
+    start();
 });
 
-// CALL BUTTON (SENDER)
-function callUser(){
-    let target = document.getElementById("target").value;
+async function start(){
+    localStream = await navigator.mediaDevices.getUserMedia({audio:true});
 
-    socket.emit("call_user", {
-        to: target,
-        from: "{{ email }}"
+    pc = new RTCPeerConnection(config);
+
+    localStream.getTracks().forEach(track=>{
+        pc.addTrack(track, localStream);
     });
 
-    alert("Calling " + target);
+    pc.ontrack = e=>{
+        document.getElementById("remoteAudio").srcObject = e.streams[0];
+    };
+
+    pc.onicecandidate = e=>{
+        if(e.candidate){
+            socket.emit("ice", {
+                to: "{{ target }}",
+                candidate: e.candidate
+            });
+        }
+    };
+
+    // CALLER creates offer
+    if("{{ email }}" < "{{ target }}"){
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+
+        socket.emit("offer", {
+            to: "{{ target }}",
+            offer: offer
+        });
+    }
 }
 
-// 🔥 RECEIVER SIDE (THIS WAS MISSING)
-socket.on("incoming_call", (data)=>{
-    incomingCaller = data.from;
+// RECEIVE OFFER
+socket.on("offer", async (data)=>{
+    await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
 
-    document.getElementById("popup").style.display = "block";
-    document.getElementById("caller").innerText =
-        "Incoming call from " + data.from;
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+
+    socket.emit("answer", {
+        to: data.from,
+        answer: answer
+    });
 });
 
-// ACCEPT
-function acceptCall(){
-    socket.emit("accept_call", {
-        to: incomingCaller,
-        from: "{{ email }}"
-    });
-
-    window.open("/call?target="+incomingCaller, "_blank");
-}
-
-// REJECT
-function rejectCall(){
-    socket.emit("reject_call", {
-        to: incomingCaller,
-        from: "{{ email }}"
-    });
-
-    document.getElementById("popup").style.display = "none";
-}
-
-// RESPONSE TO CALLER
-socket.on("call_accepted", ()=>{
-    window.open("/call?target={{ email }}", "_blank");
+// RECEIVE ANSWER
+socket.on("answer", async (data)=>{
+    await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+    document.getElementById("status").innerText = "Connected 🎧";
 });
 
-socket.on("call_rejected", ()=>{
-    alert("Call Rejected");
+// ICE
+socket.on("ice", async (data)=>{
+    try{
+        await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+    }catch(e){}
 });
 </script>
 
