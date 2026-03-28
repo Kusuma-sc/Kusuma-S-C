@@ -1,23 +1,23 @@
-body {
+body{
     margin:0;
-    font-family: Arial;
-    background: url('https://images.unsplash.com/photo-1492724441997-5dc865305da7') no-repeat center/cover;
+    font-family:Arial;
+    background:url('https://images.unsplash.com/photo-1498050108023-c5249f4df085') no-repeat center/cover;
     height:100vh;
     display:flex;
     justify-content:center;
     align-items:center;
 }
 
-.card {
-    background: rgba(0,0,0,0.6);
-    padding:30px;
+.card{
+    background:rgba(0,0,0,0.6);
+    padding:25px;
     border-radius:15px;
     width:300px;
     color:white;
     text-align:center;
 }
 
-input, button {
+input,button{
     width:100%;
     padding:10px;
     margin:5px 0;
@@ -25,8 +25,18 @@ input, button {
     border-radius:8px;
 }
 
-button {
+button{
     background:#00c6ff;
     color:white;
-    cursor:pointer;
+}
+
+.popup{
+    display:none;
+    position:fixed;
+    top:40%;
+    left:40%;
+    background:black;
+    color:white;
+    padding:20px;
+    border-radius:10px;
 }

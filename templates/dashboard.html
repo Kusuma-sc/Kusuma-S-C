@@ -7,7 +7,7 @@
 <body>
 
 <div class="card">
-<h2>{{ email }}</h2>
+<h3>{{ email }}</h3>
 
 <input id="target" placeholder="Enter email to call">
 <button onclick="callUser()">Call</button>
@@ -18,79 +18,68 @@
 <button onclick="sendMsg()">Send</button>
 
 <div id="chat"></div>
-<div id="popup" style="display:none; background:black; color:white; padding:20px; position:fixed; top:40%; left:40%;">
-    <p id="caller"></p>
-    <button onclick="acceptCall()">Accept</button>
-    <button onclick="rejectCall()">Reject</button>
 </div>
+
+<!-- POPUP -->
+<div id="popup" class="popup">
+<p id="caller"></p>
+<button onclick="acceptCall()">Accept</button>
+<button onclick="rejectCall()">Reject</button>
 </div>
+
+<audio id="ringtone" src="/static/ringtone.mp3" loop></audio>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-
-<div id="popup" style="display:none; background:black; color:white; padding:20px; position:fixed; top:40%; left:40%;">
-    <p id="caller"></p>
-    <button onclick="acceptCall()">Accept</button>
-    <button onclick="rejectCall()">Reject</button>
-</div>
-
 <script>
 const socket = io();
-let incomingCaller = "";
 
-// REGISTER
-socket.on("connect", ()=>{
-    socket.emit("register", {email: "{{ email }}"});
-});
+function callUser() {
+    const target = document.getElementById("targetEmail").value;
+    const myEmail = "{{ email }}";
 
-// CALL
-function callUser(){
-    let target = document.getElementById("target").value;
+    if (!target) {
+        alert("Enter email");
+        return;
+    }
 
     socket.emit("call_user", {
-        to: target,
-        from: "{{ email }}"
+        from: myEmail,
+        to: target
     });
-
-    alert("Calling...");
 }
 
-// 🔥 RECEIVER POPUP
-socket.on("incoming_call", (data)=>{
-    incomingCaller = data.from;
-
-    document.getElementById("popup").style.display = "block";
-    document.getElementById("caller").innerText =
-        "Incoming call from " + data.from;
+// listen for acceptance
+socket.on("call_accepted", (data) => {
+    window.location.href = "/call?target=" + data.from;
 });
 
-// ACCEPT
-function acceptCall(){
-    socket.emit("accept_call", {
-        to: incomingCaller,
-        from: "{{ email }}"
-    });
-
-    window.open("/call?target="+incomingCaller, "_blank");
-}
-
-// REJECT
-function rejectCall(){
-    socket.emit("reject_call", {
-        to: incomingCaller,
-        from: "{{ email }}"
-    });
-
-    document.getElementById("popup").style.display = "none";
-}
-
-// CALLER RESPONSE
-socket.on("call_accepted", (data)=>{
-    window.open("/call?target="+data.from, "_blank");
-});
-
-socket.on("call_rejected", ()=>{
+socket.on("call_rejected", () => {
     alert("Call Rejected");
+});
+</script>
+<audio id="ringtone" src="/static/ringtone.mp3" loop></audio>
+
+<script>
+socket.on("incoming_call", (data) => {
+    const ringtone = document.getElementById("ringtone");
+    ringtone.play();
+
+    const accept = confirm("Incoming call from " + data.from);
+
+    ringtone.pause();
+
+    if (accept) {
+        socket.emit("accept_call", {
+            from: "{{ email }}",
+            to: data.from
+        });
+
+        window.location.href = "/call?target=" + data.from;
+    } else {
+        socket.emit("reject_call", {
+            to: data.from
+        });
+    }
 });
 </script>
 
