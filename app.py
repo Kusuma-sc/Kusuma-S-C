@@ -4,11 +4,11 @@ from flask_socketio import SocketIO, emit
 app = Flask(__name__)
 app.secret_key = "secret123"
 
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 
 users = {}
 
-# ---------------- ROUTES ---------------- #
+# ---------- ROUTES ---------- #
 
 @app.route('/')
 def login():
@@ -17,6 +17,11 @@ def login():
 @app.route('/dashboard', methods=['POST'])
 def dashboard():
     email = request.form.get("email")
+    password = request.form.get("password")
+
+    if not email or not password:
+        return redirect("/")
+
     session['email'] = email
     return render_template("dashboard.html", email=email)
 
@@ -27,53 +32,39 @@ def call():
     target = request.args.get("target")
     return render_template("call.html", email=session['email'], target=target)
 
-# ---------------- SOCKET ---------------- #
+# ---------- SOCKET ---------- #
 
-@socketio.on('connect')
-def connect():
-    if 'email' in session:
-        users[session['email']] = request.sid
-        print("Connected:", session['email'])
+@socketio.on('register')
+def register(data):
+    users[data['email']] = request.sid
 
 @socketio.on('disconnect')
 def disconnect():
-    if 'email' in session:
-        users.pop(session['email'], None)
+    for email, sid in list(users.items()):
+        if sid == request.sid:
+            users.pop(email)
+            break
 
-# 📞 CALL REQUEST
 @socketio.on('call_user')
 def call_user(data):
-    target = data['to']
-    caller = data['from']
+    if data['to'] in users:
+        emit('incoming_call', {'from': data['from']}, to=users[data['to']])
 
-    print("Calling:", target)
-
-    if target in users:
-        emit('incoming_call', {'from': caller}, to=users[target])
-
-# ✅ ACCEPT CALL
 @socketio.on('accept_call')
 def accept_call(data):
-    caller = data['to']
-    receiver = data['from']
+    if data['to'] in users:
+        emit('call_accepted', {'from': data['from']}, to=users[data['to']])
 
-    if caller in users:
-        emit('call_accepted', {'from': receiver}, to=users[caller])
-
-# ❌ REJECT CALL
 @socketio.on('reject_call')
 def reject_call(data):
-    caller = data['to']
+    if data['to'] in users:
+        emit('call_rejected', {}, to=users[data['to']])
 
-    if caller in users:
-        emit('call_rejected', {}, to=users[caller])
-
-# 💬 CHAT
 @socketio.on('send_message')
 def message(data):
     emit('receive_message', data, broadcast=True)
 
-# ---------------- RUN ---------------- #
+# ---------- RUN ---------- #
 
 if __name__ == "__main__":
     socketio.run(app, host="0.0.0.0", port=10000)

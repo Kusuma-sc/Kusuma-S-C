@@ -1,37 +1,103 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Call</title>
+<title>Dashboard</title>
+<link rel="stylesheet" href="/static/style.css">
 </head>
-
 <body>
 
-<h2>Voice Call</h2>
+<div class="chat-box">
+<h3>👤 {{ email }}</h3>
 
-<button onclick="Call()">Call</button>
+<input id="targetEmail" placeholder="Enter email to call">
+<button onclick="callUser()">📞 Call</button>
+
+<div id="chat"></div>
+
+<div class="msg-box">
+<input id="msg" placeholder="Type message">
+<button onclick="sendMsg()">Send</button>
+</div>
+
+</div>
+
+<!-- POPUP -->
+<div id="popup" class="popup">
+<p id="caller"></p>
+<button onclick="acceptCall()">Accept</button>
+<button onclick="rejectCall()">Reject</button>
+</div>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
 <script>
 const socket = io();
-let localStream;
-let peer;
+let callerEmail = "";
 
-async function startCall() {
-    localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+// REGISTER
+socket.on("connect", ()=>{
+    socket.emit("register", {email: "{{ email }}"});
+});
 
-    peer = new RTCPeerConnection();
+// SEND MESSAGE
+function sendMsg(){
+    let msg = document.getElementById("msg").value;
 
-    localStream.getTracks().forEach(track => {
-        peer.addTrack(track, localStream);
+    socket.emit("send_message", {
+        msg: msg,
+        user: "{{ email }}"
+    });
+}
+
+// RECEIVE MESSAGE
+socket.on("receive_message", (data)=>{
+    document.getElementById("chat").innerHTML +=
+        "<p><b>"+data.user+":</b> "+data.msg+"</p>";
+});
+
+// CALL
+function callUser(){
+    let target = document.getElementById("targetEmail").value;
+
+    socket.emit("call_user", {
+        from: "{{ email }}",
+        to: target
+    });
+}
+
+// RECEIVE CALL
+socket.on("incoming_call", (data)=>{
+    callerEmail = data.from;
+
+    document.getElementById("popup").style.display="block";
+    document.getElementById("caller").innerText =
+        "📞 Call from " + data.from;
+});
+
+// ACCEPT
+function acceptCall(){
+    socket.emit("accept_call", {
+        from: "{{ email }}",
+        to: callerEmail
     });
 
-    peer.ontrack = (event) => {
-        const audio = new Audio();
-        audio.srcObject = event.streams[0];
-        audio.play();
-    };
+    window.location.href = "/call?target="+callerEmail;
 }
+
+// REJECT
+function rejectCall(){
+    socket.emit("reject_call", {to: callerEmail});
+    document.getElementById("popup").style.display="none";
+}
+
+// CALLER RESPONSE
+socket.on("call_accepted", (data)=>{
+    window.location.href = "/call?target="+data.from;
+});
+
+socket.on("call_rejected", ()=>{
+    alert("Call Rejected");
+});
 </script>
 
 </body>
