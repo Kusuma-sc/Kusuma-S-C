@@ -1,104 +1,27 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Dashboard</title>
-<link rel="stylesheet" href="/static/style.css">
+<title>Call</title>
+
+<style>
+body {
+    background:black;
+    color:white;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+    font-size:24px;
+}
+</style>
+
 </head>
+
 <body>
 
-<div class="chat-box">
-<h3>👤 {{ email }}</h3>
-
-<input id="targetEmail" placeholder="Enter email to call">
-<button onclick="callUser()">📞 Call</button>
-
-<div id="chat"></div>
-
-<div class="msg-box">
-<input id="msg" placeholder="Type message">
-<button onclick="sendMsg()">Send</button>
+<div>
+📞 Connected with {{ target }}
 </div>
-
-</div>
-
-<!-- POPUP -->
-<div id="popup" class="popup">
-<p id="caller"></p>
-<button onclick="acceptCall()">Accept</button>
-<button onclick="rejectCall()">Reject</button>
-</div>
-
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-
-<script>
-const socket = io();
-let callerEmail = "";
-
-// REGISTER
-socket.on("connect", ()=>{
-    socket.emit("register", {email: "{{ email }}"});
-});
-
-// SEND MESSAGE
-function sendMsg(){
-    let msg = document.getElementById("msg").value;
-
-    socket.emit("send_message", {
-        msg: msg,
-        user: "{{ email }}"
-    });
-}
-
-// RECEIVE MESSAGE
-socket.on("receive_message", (data)=>{
-    document.getElementById("chat").innerHTML +=
-        "<p><b>"+data.user+":</b> "+data.msg+"</p>";
-});
-
-// CALL
-function callUser(){
-    let target = document.getElementById("targetEmail").value;
-
-    socket.emit("call_user", {
-        from: "{{ email }}",
-        to: target
-    });
-}
-
-// RECEIVE CALL
-socket.on("incoming_call", (data)=>{
-    callerEmail = data.from;
-
-    document.getElementById("popup").style.display="block";
-    document.getElementById("caller").innerText =
-        "📞 Call from " + data.from;
-});
-
-// ACCEPT
-function acceptCall(){
-    socket.emit("accept_call", {
-        from: "{{ email }}",
-        to: callerEmail
-    });
-
-    window.location.href = "/call?target="+callerEmail;
-}
-
-// REJECT
-function rejectCall(){
-    socket.emit("reject_call", {to: callerEmail});
-    document.getElementById("popup").style.display="none";
-}
-
-// CALLER RESPONSE
-socket.on("call_accepted", (data)=>{
-    window.location.href = "/call?target="+data.from;
-});
-
-socket.on("call_rejected", ()=>{
-    alert("Call Rejected");
-});
-</script>
 
 </body>
 </html>

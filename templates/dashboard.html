@@ -2,28 +2,68 @@
 <html>
 <head>
 <title>Dashboard</title>
-<link rel="stylesheet" href="/static/style.css">
+
+<style>
+body {
+    margin:0;
+    font-family: Arial;
+    background: linear-gradient(to right, #075E54, #128C7E);
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+.box {
+    background:white;
+    width:350px;
+    padding:20px;
+    border-radius:10px;
+}
+
+button {
+    background:#25D366;
+    color:white;
+    padding:10px;
+    border:none;
+    width:100%;
+    margin:5px 0;
+}
+
+input {
+    width:100%;
+    padding:10px;
+    margin:5px 0;
+}
+
+.popup {
+    display:none;
+    position:fixed;
+    top:40%;
+    left:35%;
+    background:black;
+    color:white;
+    padding:20px;
+    border-radius:10px;
+}
+</style>
+
 </head>
+
 <body>
 
-<div class="chat-box">
-<h3>👤 {{ email }}</h3>
+<div class="box">
+
+<h3>{{ email }}</h3>
 
 <input id="targetEmail" placeholder="Enter email to call">
 <button onclick="callUser()">📞 Call</button>
-
-<div id="chat"></div>
-
-<div class="msg-box">
-<input id="msg" placeholder="Type message">
-<button onclick="sendMsg()">Send</button>
-</div>
 
 </div>
 
 <!-- POPUP -->
 <div id="popup" class="popup">
-<p id="caller"></p>
+<p id="callerText"></p>
 <button onclick="acceptCall()">Accept</button>
 <button onclick="rejectCall()">Reject</button>
 </div>
@@ -32,71 +72,61 @@
 
 <script>
 const socket = io();
-let callerEmail = "";
+let caller = "";
 
-// REGISTER
-socket.on("connect", ()=>{
-    socket.emit("register", {email: "{{ email }}"});
-});
-
-// SEND MESSAGE
-function sendMsg(){
-    let msg = document.getElementById("msg").value;
-
-    socket.emit("send_message", {
-        msg: msg,
-        user: "{{ email }}"
-    });
-}
-
-// RECEIVE MESSAGE
-socket.on("receive_message", (data)=>{
-    document.getElementById("chat").innerHTML +=
-        "<p><b>"+data.user+":</b> "+data.msg+"</p>";
-});
-
-// CALL
+// CALL BUTTON
 function callUser(){
-    let target = document.getElementById("targetEmail").value;
+    const target = document.getElementById("targetEmail").value;
+
+    if(!target){
+        alert("Enter email");
+        return;
+    }
 
     socket.emit("call_user", {
         from: "{{ email }}",
         to: target
     });
+
+    alert("Calling " + target);
 }
 
 // RECEIVE CALL
 socket.on("incoming_call", (data)=>{
-    callerEmail = data.from;
+    caller = data.from;
 
-    document.getElementById("popup").style.display="block";
-    document.getElementById("caller").innerText =
-        "📞 Call from " + data.from;
+    document.getElementById("popup").style.display = "block";
+    document.getElementById("callerText").innerText =
+        "📞 Call from " + caller;
 });
 
 // ACCEPT
 function acceptCall(){
     socket.emit("accept_call", {
         from: "{{ email }}",
-        to: callerEmail
+        to: caller
     });
 
-    window.location.href = "/call?target="+callerEmail;
+    window.location.href = "/call?target=" + caller;
 }
 
 // REJECT
 function rejectCall(){
-    socket.emit("reject_call", {to: callerEmail});
-    document.getElementById("popup").style.display="none";
+    socket.emit("reject_call", {
+        to: caller
+    });
+
+    document.getElementById("popup").style.display = "none";
 }
 
-// CALLER RESPONSE
+// CALL ACCEPTED (CALLER SIDE)
 socket.on("call_accepted", (data)=>{
-    window.location.href = "/call?target="+data.from;
+    window.location.href = "/call?target=" + data.from;
 });
 
+// CALL REJECTED
 socket.on("call_rejected", ()=>{
-    alert("Call Rejected");
+    alert("Call rejected");
 });
 </script>
 
