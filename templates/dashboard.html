@@ -2,71 +2,113 @@
 <html>
 <head>
 <title>Dashboard</title>
-<link rel="stylesheet" href="/static/style.css">
+
+<style>
+body {
+    margin:0;
+    font-family: Arial;
+    background: url('https://images.unsplash.com/photo-1498050108023-c5249f4df085') no-repeat center/cover;
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+.box {
+    background: rgba(0,0,0,0.6);
+    padding:25px;
+    border-radius:15px;
+    width:320px;
+    color:white;
+    text-align:center;
+}
+
+input, button {
+    width:100%;
+    padding:12px;
+    margin:8px 0;
+    border:none;
+    border-radius:8px;
+}
+
+button {
+    background:#00c6ff;
+    color:white;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+button:hover {
+    background:#0072ff;
+}
+
+#chat {
+    max-height:150px;
+    overflow:auto;
+    text-align:left;
+}
+</style>
 </head>
+
 <body>
 
-<div class="card">
-<h3>{{ email }}</h3>
+<div class="box">
+<h2>Welcome {{ email }}</h2>
 
-<input id="target" placeholder="Enter email to call">
-<button onclick="callUser()">Call</button>
+<!-- CALL SECTION -->
+<input type="text" id="targetEmail" placeholder="Enter email to call">
+<button onclick="callUser()">📞 Call</button>
 
 <hr>
 
-<input id="msg" placeholder="Message">
+<!-- CHAT -->
+<input id="msg" placeholder="Type message">
 <button onclick="sendMsg()">Send</button>
 
 <div id="chat"></div>
-</div>
 
-<!-- POPUP -->
-<div id="popup" class="popup">
-<p id="caller"></p>
-<button onclick="acceptCall()">Accept</button>
-<button onclick="rejectCall()">Reject</button>
 </div>
-
-<audio id="ringtone" src="/static/ringtone.mp3" loop></audio>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
 <script>
 const socket = io();
 
+// ✅ SEND MESSAGE
+function sendMsg(){
+    const msg = document.getElementById("msg").value;
+    socket.emit("send_message", {msg:msg});
+}
+
+// ✅ RECEIVE MESSAGE
+socket.on("receive_message", data=>{
+    document.getElementById("chat").innerHTML += "<p>"+data.msg+"</p>";
+});
+
+// ✅ CALL FUNCTION (ONLY ONE VERSION)
 function callUser() {
     const target = document.getElementById("targetEmail").value;
-    const myEmail = "{{ email }}";
 
     if (!target) {
         alert("Enter email");
         return;
     }
 
+    // ✅ correct redirect
+    window.location.href = "/call?target=" + target;
+
+    // 🔔 send call request to backend
     socket.emit("call_user", {
-        from: myEmail,
+        from: "{{ email }}",
         to: target
     });
 }
 
-// listen for acceptance
-socket.on("call_accepted", (data) => {
-    window.location.href = "/call?target=" + data.from;
-});
-
-socket.on("call_rejected", () => {
-    alert("Call Rejected");
-});
-</script>
-<audio id="ringtone" src="/static/ringtone.mp3" loop></audio>
-
-<script>
+// 📞 RECEIVE INCOMING CALL
 socket.on("incoming_call", (data) => {
-    const ringtone = document.getElementById("ringtone");
-    ringtone.play();
+    alert("Incoming call from " + data.from);
 
-    const accept = confirm("Incoming call from " + data.from);
-
-    ringtone.pause();
+    const accept = confirm("Accept call?");
 
     if (accept) {
         socket.emit("accept_call", {
@@ -75,11 +117,13 @@ socket.on("incoming_call", (data) => {
         });
 
         window.location.href = "/call?target=" + data.from;
-    } else {
-        socket.emit("reject_call", {
-            to: data.from
-        });
     }
+});
+
+// ✅ CALL ACCEPTED
+socket.on("call_accepted", (data) => {
+    alert("Call accepted by " + data.from);
+    window.location.href = "/call?target=" + data.from;
 });
 </script>
 
