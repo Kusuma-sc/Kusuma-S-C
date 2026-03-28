@@ -2,7 +2,16 @@
 <html>
 <head>
 <title>Dashboard</title>
+    const socket = io();
 
+// 🔥 REGISTER USER (MUST HAVE)
+socket.on("connect", () => {
+    socket.emit("register", { email: "{{ email }}" });
+});
+const socket = io();
+let caller = "";
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <style>
 body {
     margin:0;
@@ -71,10 +80,17 @@ input {
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
 <script>
+
+
 const socket = io();
 let caller = "";
 
-// CALL BUTTON
+// ✅ REGISTER USER
+socket.on("connect", () => {
+    socket.emit("register", { email: "{{ email }}" });
+});
+
+// 📞 CALL BUTTON
 function callUser(){
     const target = document.getElementById("targetEmail").value;
 
@@ -91,7 +107,7 @@ function callUser(){
     alert("Calling " + target);
 }
 
-// RECEIVE CALL
+// 📞 RECEIVE CALL (ONLY RECEIVER GETS THIS)
 socket.on("incoming_call", (data)=>{
     caller = data.from;
 
@@ -100,7 +116,7 @@ socket.on("incoming_call", (data)=>{
         "📞 Call from " + caller;
 });
 
-// ACCEPT
+// ✅ ACCEPT
 function acceptCall(){
     socket.emit("accept_call", {
         from: "{{ email }}",
@@ -110,7 +126,7 @@ function acceptCall(){
     window.location.href = "/call?target=" + caller;
 }
 
-// REJECT
+// ❌ REJECT
 function rejectCall(){
     socket.emit("reject_call", {
         to: caller
@@ -119,15 +135,16 @@ function rejectCall(){
     document.getElementById("popup").style.display = "none";
 }
 
-// CALL ACCEPTED (CALLER SIDE)
+// 🔁 CALLER SIDE REDIRECT
 socket.on("call_accepted", (data)=>{
     window.location.href = "/call?target=" + data.from;
 });
 
-// CALL REJECTED
+// ❌ CALL REJECTED
 socket.on("call_rejected", ()=>{
     alert("Call rejected");
 });
+
 </script>
 
 </body>
